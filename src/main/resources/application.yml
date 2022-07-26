@@ -1,0 +1,18 @@
+spring:
+  datasource:
+    #sprin에서 connection할 데이터베이스 url
+    url: jdbc:h2:tcp://localhost/~/data-jpa
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+
+  jpa:
+    hibernate:
+      # application 로딩시점에 table들을 drop한 후 새로 생성한다. application이 내려가도 database에 접속하여 table확인 가능하다.
+      ddl-auto: create
+    properties:
+      hibernate:
+        format_sql: true
+
+logging.level:
+  org.hibernate.SQL: debug
