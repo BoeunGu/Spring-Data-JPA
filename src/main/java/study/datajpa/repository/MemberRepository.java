@@ -1,11 +1,14 @@
 package study.datajpa.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import study.datajpa.dto.MemberDto;
 import study.datajpa.entity.Member;
 
+import javax.annotation.PreDestroy;
+import java.util.Collection;
 import java.util.List;
 
 public interface MemberRepository extends JpaRepository<Member,Long> {
@@ -25,9 +28,20 @@ public interface MemberRepository extends JpaRepository<Member,Long> {
     @Query("select m.username from Member m")
     List<String> findUsernameList();
 
-    //new operation for DTO
+    //DTO로 조회하기 -> new operation for DTO 사용, 엔티티의 생성자에 있는 생성자를 사용하여야한다.
     @Query("select new study.datajpa.dto.MemberDto(m.id, m.username, t.name) from Member m join m.team t")
-    List<MemberDto> findMemberDto();
+    List<MemberDto> findMemberDto(); // 만약 해당조건에 맞는 객체가 없어도 null을 반환하지 않고 empty Collection을 반환함. 하지만 java8부터는 optional(단건조회!)이 있어서 이걸 사용권장
+
+
+    //Collection 조회 -> 파라미터 바인딩으로 변수로 넘겨줄 수 있다.
+    @Query("select m from Member m where m.username in :names")
+    List<Member> findByNames(@Param("names") Collection<String> names);
+
+
+    //bulk쿼리는 영속성컨텍스트를 거치지 않고 바로 db에 전달됨 (주의해야함)
+    @Modifying(clearAutomatically = true) //select가 아니라 무언가를 변경하는 것(update 쿼리)을 알려줌
+    @Query("update Member m set m.age = m.age + 1 where m.age >= :age")
+    int bulkAgePlus(@Param("age") int age);
 
 
 }

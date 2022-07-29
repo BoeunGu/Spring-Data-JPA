@@ -1,6 +1,7 @@
 package study.datajpa.repository;
 
 import org.assertj.core.api.Assertions;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -10,6 +11,9 @@ import study.datajpa.dto.MemberDto;
 import study.datajpa.entity.Member;
 import study.datajpa.entity.Team;
 
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
+import java.util.Arrays;
 import java.util.List;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
@@ -22,6 +26,8 @@ class MemberRepositoryTest {
 
     @Autowired MemberRepository memberRepository;
     @Autowired TeamRepository teamRepository;
+    @PersistenceContext
+    EntityManager entityManager;//이게 영속성 컨텍스트, 같은 transaction이면 같은 엔티티매니저가 동작 함
 
     @Test
     public void testMember(){
@@ -94,6 +100,52 @@ class MemberRepositoryTest {
         for (MemberDto dto : memberDto) {
             System.out.println("dto = " + dto);
         }
+    }
+
+
+    @Test
+    public void findByNames(){
+        Member m1 = new Member("AAA", 10);
+        Member m2 = new Member("BBB", 20);
+        memberRepository.save(m1);
+        memberRepository.save(m2);
+
+        List<Member> result = memberRepository.findByNames(Arrays.asList("AAA", "BBB"));
+        for (Member member : result) {
+            System.out.println("member = " + member);
+        }
+
+    }
+
+    @Test
+    @DisplayName("벌크성 쿼리")
+    public void bulkUpdate(){
+
+        //given
+        memberRepository.save(new Member("member1",10));
+        memberRepository.save(new Member("member2",20));
+        memberRepository.save(new Member("member3",30));
+        memberRepository.save(new Member("member4",40));
+        memberRepository.save(new Member("member5",50));
+
+        //when
+        int resultcount = memberRepository.bulkAgePlus(20); //모든 member의 나이가 1살 증가됨, 하지만 bulk성 쿼리는 영속성 컨텍스트를 거치지 않고
+        //바로 DB로 접근하기 때문에 영속성컨텍스트의 객체와 실제 DB의 내용이 동일하지 않음
+
+        //그렇기때문에 엔티티매니저를 날려주어야한다.
+        entityManager.flush(); //혹시 모를 데이터변경이 있을 수 있기에 DB에 쿼리를 날리고
+        entityManager.clear();//엔티티매니저를 날린다. -> 영속성컨텍스트안에 데이터를 완전히 날려버림(같은 transaction안에서 뒤에 로직이 있는경우)
+        //@Modifying(clearAutomatically=true)를 해주면 해당 JPQL실행 후 엔티티매니저를 알아서 날려준다.
+
+
+        List<Member> result = memberRepository.findByUsername("member5"); //영속성컨텍스트가 없기 때문에 DB에서 다시 데이터를 조회해온다.
+        Member member5 = result.get(0);//엔티티 매니저를 날라지 않으면 여전히 age가 50이다. //날리면 51로 정상
+
+
+
+        //then
+        assertThat(resultcount).isEqualTo(3);
+
     }
 
 }

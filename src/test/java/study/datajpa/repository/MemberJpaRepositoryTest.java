@@ -1,6 +1,7 @@
 package study.datajpa.repository;
 
 import org.assertj.core.api.Assertions;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -64,5 +65,25 @@ class MemberJpaRepositoryTest {
         assertThat(deletedCount).isEqualTo(0);
 
     }
+
+    @Test
+    @DisplayName("벌크성 쿼리")
+    public void bulkUpdate(){
+
+        //given
+        memberJpaRepository.save(new Member("member1",10));
+        memberJpaRepository.save(new Member("member2",20));
+        memberJpaRepository.save(new Member("member3",30));
+        memberJpaRepository.save(new Member("member4",40));
+        memberJpaRepository.save(new Member("member5",50));
+
+        //when
+        int resultcount = memberJpaRepository.bulkAgePlus(20);
+
+        //then
+        assertThat(resultcount).isEqualTo(3);
+
+    }
+
 
 }
