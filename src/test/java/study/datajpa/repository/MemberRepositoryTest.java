@@ -177,7 +177,41 @@ class MemberRepositoryTest {
             System.out.println("member.team = " + member.getTeam().getName()); //실제 DB에 team에 대한 sql을 날려 데이터를 들고옴
         }
 
+    }
 
+    @Test
+    public void queryHint(){
+
+        //given
+        Member member1 = new Member("member1", 10);
+        memberRepository.save(member1);
+        entityManager.flush();
+        entityManager.clear();
+
+        //when1
+        Member findMember = memberRepository.findById(member1.getId()).get();
+        findMember.setUsername("member2"); //Dirty Checking 발생, Update쿼리가 날라감 => 원본 객체(스냅샷)와 바뀐객체 2개가 존재하고 이 두개를 비교하는 프로세스가 필요하다. 즉, 메모리를 먹는다.
+        //만약 조회용으로만 사용한다면 두개의 객체가 영속성 컨텍스트에 있는 것은 낭비이다. 이때 -> Hibernate는 해결책을 줌 => @QueryHints
+
+        //when2
+        Member findMember2 = memberRepository.findReadOnlyByUsername("member1");// 스냅샷 자체를 만들지 않음
+        findMember.setUsername("member2");//Update 쿼리 안날라감
+
+        entityManager.flush();
+    }
+
+    @Test
+    public void lock(){
+
+        //given
+        Member member1 = new Member("member1", 10);
+        memberRepository.save(member1);
+        entityManager.flush();
+        entityManager.clear();
+
+        //when1
+
+        List<Member> result = memberRepository.findLockByUsername("member1");
     }
 
 }
