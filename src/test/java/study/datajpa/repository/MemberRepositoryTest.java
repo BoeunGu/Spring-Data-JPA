@@ -148,4 +148,36 @@ class MemberRepositoryTest {
 
     }
 
+
+    @Test// N+1 문제 (member를 조회하는 쿼리 1번 + member 안에 연관된 테이블 조회용 쿼리 N번 (team table에 대한 쿼리 1번) 각각 네트워크를 타기때문에 성능에 좋지 않다.
+    public void findMemberLazy(){
+        //given
+        //member1 -> teamA를 참조
+        //member2 -> teamB를 참조
+
+        Team teamA = new Team("teamA");
+        Team teamB = new Team("teamB");
+        teamRepository.save(teamA);
+        teamRepository.save(teamB);
+        Member member1 = new Member("member1", 10, teamA);
+        Member member2 = new Member("member2", 10, teamB);
+        memberRepository.save(member1);
+        memberRepository.save(member2);
+
+        entityManager.flush();//영속성 컨텍스트의 정보를 DB에 완전히 동기화함
+        entityManager.clear();//영속성 컨텍스트를 완전히 날려버림
+
+        //when
+
+        //select Member -> Member에 대한 데이터만 DB에서 들고옴, team은 프록시객체를 만들어 둠
+        List<Member> members = memberRepository.findAll();
+
+        for (Member member : members) {
+            System.out.println("member = " + member.getUsername());
+            System.out.println("member.team = " + member.getTeam().getName()); //실제 DB에 team에 대한 sql을 날려 데이터를 들고옴
+        }
+
+
+    }
+
 }

@@ -22,7 +22,7 @@ public class Member {
     private String username;
     private int age;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY) //member만 조회시 team은 가짜객체를 참조하고 실제 team의 데이터를 사용하는 시점에 sql이 날라감 -> 지연로딩
     @JoinColumn(name="team_id")
     private Team team;
 

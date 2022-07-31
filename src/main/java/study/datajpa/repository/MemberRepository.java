@@ -1,5 +1,6 @@
 package study.datajpa.repository;
 
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -42,6 +43,18 @@ public interface MemberRepository extends JpaRepository<Member,Long> {
     @Modifying(clearAutomatically = true) //select가 아니라 무언가를 변경하는 것(update 쿼리)을 알려줌
     @Query("update Member m set m.age = m.age + 1 where m.age >= :age")
     int bulkAgePlus(@Param("age") int age);
+
+    @Query("select m from Member m left join fetch m.team")//member를 조회할 때 연관된 team의 데이터도 한방에 쿼리를 날려서 들고옴
+    //team에 프록시객체가 아니라 진짜 객체를 넣어둠!
+    List<Member> findMemberFetchJoin();
+
+    @Override
+    @EntityGraph(attributePaths = {"team"}) //JPQL없이 fetch join을 해줌 -> 객체 그래프를 한번에 엮어서 성능최적화를 해줌
+    List<Member> findAll();
+
+    //Member의 username을 조회할 때 TEAM에 대한 데이터도 함께 불러오기
+    @EntityGraph(attributePaths = {"team"})
+    List<Member> findEntityGraphByUsername(@Param("username") String username);
 
 
 }
