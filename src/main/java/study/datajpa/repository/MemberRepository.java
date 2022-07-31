@@ -11,7 +11,7 @@ import javax.persistence.QueryHint;
 import java.util.Collection;
 import java.util.List;
 
-public interface MemberRepository extends JpaRepository<Member,Long> {
+public interface MemberRepository extends JpaRepository<Member,Long>, MemberRepositoryCustom{
 
  //구현체가 없어도 spring data Jpa가 Jpa관련 인터페이스를 상속받은 인터페이스의 구현클래스를(proxy 객체) 만들어서 요청하는 곳에 주입시킴
 
