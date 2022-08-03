@@ -2,6 +2,7 @@ package study.datajpa.entity;
 
 import com.sun.xml.bind.v2.runtime.output.SAXOutput;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import javax.persistence.EntityManager;
@@ -12,8 +13,13 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import study.datajpa.repository.MemberRepository;
+
 @SpringBootTest
 class MemberTest {
+
+    @Autowired
+    MemberRepository memberRepository;
 
     @PersistenceContext
     EntityManager em;
@@ -50,6 +56,27 @@ class MemberTest {
         }
 
 
+    }
+
+    @Test
+    public void JpaEventBaseEntity() throws Exception{
+        //given
+        Member member = new Member("member1");
+        memberRepository.save(member); //@PrePersist가 발생
+
+        Thread.sleep(100);
+        member.setUsername("member2");
+
+        em.flush(); // @Preupdate qkftod
+        em.clear();
+
+        //when
+
+        Member findMember = memberRepository.findById(member.getId()).get();
+
+        //then
+        System.out.println("findMember.gerCreateDate = " + findMember.getCreateDate());
+        System.out.println("findMember.gerupdateDate = " + findMember.getUpdateDate());
     }
 
 }
