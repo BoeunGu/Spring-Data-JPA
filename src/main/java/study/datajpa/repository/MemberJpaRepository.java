@@ -1,13 +1,14 @@
 package study.datajpa.repository;
 
-
-import org.springframework.stereotype.Repository;
-import study.datajpa.entity.Member;
+import java.util.List;
+import java.util.Optional;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
-import java.util.List;
-import java.util.Optional;
+
+import org.springframework.stereotype.Repository;
+
+import study.datajpa.entity.Member;
 
 @Repository
 public class MemberJpaRepository {
@@ -62,16 +63,33 @@ public class MemberJpaRepository {
         return em.createQuery("select count(m) from Member m", Long.class).getSingleResult();
     }
 
-
     /*
     벌크성 수정 쿼리
      */
-    public int bulkAgePlus(int age){
+    public int bulkAgePlus(int age) {
         return em.createQuery("update  Member m set m.age = m.age+1 where m.age>=:age")
-                .setParameter("age",age)
-                .executeUpdate();
+            .setParameter("age", age)
+            .executeUpdate();
     }
 
+    /*
+    페이징
+     */
+    public List<Member> findByPage(int age, int offset, int limit) {
+        return em.createQuery(("select m from Member m where m.age = :age order by m.username desc "))
+            .setParameter("age", age)
+            .setFirstResult(offset)
+            .setMaxResults(limit)
+            .getResultList();
+    }
 
+    /*
+    Total Count
+     */
+    public long totalCount(int age) {
+        return em.createQuery("select count(m) from Member m where m.age =: age", Long.class)
+            .setParameter("age", age)
+            .getSingleResult();
+    }
 
 }

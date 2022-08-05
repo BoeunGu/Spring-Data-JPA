@@ -1,22 +1,28 @@
 package study.datajpa.repository;
 
+import static org.assertj.core.api.AssertionsForClassTypes.*;
+
+import java.util.Arrays;
+import java.util.List;
+
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
+
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Slice;
+import org.springframework.data.domain.Sort;
 import org.springframework.test.annotation.Rollback;
 import org.springframework.transaction.annotation.Transactional;
+
 import study.datajpa.dto.MemberDto;
 import study.datajpa.entity.Member;
 import study.datajpa.entity.Team;
-
-import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
-import java.util.Arrays;
-import java.util.List;
-
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
 
 @SpringBootTest
@@ -215,7 +221,84 @@ class MemberRepositoryTest {
     }
 
     @Test
-    public void callCustom(){
+    public void callCustom() {
         List<Member> result = memberRepository.findMemberCustom();
     }
+
+    //Page
+    @Test
+    public void paging() {
+        //given
+        memberRepository.save(new Member("member1", 10));
+        memberRepository.save(new Member("member2", 20));
+        memberRepository.save(new Member("member3", 30));
+        memberRepository.save(new Member("member4", 40));
+        memberRepository.save(new Member("member5", 50));
+
+        int age = 10;
+        int offset = 0;
+        int limit = 3;
+
+        PageRequest pageRequest = PageRequest.of(0, 3, Sort.by(Sort.Direction.DESC, "username"));
+
+        //when
+        Page<Member> page = memberRepository.findByAge(age, pageRequest); //반환타입이 Page이면 totalCount쿼리도 같이 날려줌
+
+        //totalCount쿼리 자체가 DB에서 데이트를 전부 조회하기 때문에 성능에 좋지 않음 , 따로 countQuery로 분리 가능 (join이 없앨 수 있다.)
+
+        //절대 Entity를 외부에 노출시키지 말고 DTO로 변환하여 반환해야한다.
+
+        Page<MemberDto> toMap = page.map(member -> new MemberDto(member.getId(), member.getUsername(), null));
+
+        //then
+
+        List<Member> content = page.getContent(); //반환타입은 List //3개
+        long totalElements = page.getTotalElements(); //totalCount의 개념
+
+        for (Member member : content) {
+            System.out.println("member = " + member);
+
+        }
+        System.out.println("totalElements = " + totalElements); //5개
+
+        assertThat(content.size()).isEqualTo(3);
+        assertThat(page.getTotalElements()).isEqualTo(5); // 웹소설이 총 몇회인지
+        assertThat(page.getNumber()).isEqualTo(0); // 페이지 넘버도 가져올 수 있음(현재)
+        assertThat(page.getTotalPages()).isEqualTo(2); //웹소설의 페이지가 총 몇 페이지인지
+    }
+
+    //Slice
+    @Test
+    public void slicing() {
+        //given
+        memberRepository.save(new Member("member1", 10));
+        memberRepository.save(new Member("member2", 20));
+        memberRepository.save(new Member("member3", 30));
+        memberRepository.save(new Member("member4", 40));
+        memberRepository.save(new Member("member5", 50));
+
+        int age = 10;
+        int offset = 0;
+        int limit = 3;
+
+        PageRequest pageRequest = PageRequest.of(0, 3, Sort.by(Sort.Direction.DESC, "username")); //실제 limit은 4개를 들고옴
+
+        //when
+        Slice<Member> page = memberRepository.findSliceByAge(age, pageRequest); // Slice는 totalCount를 가져오지 않음
+
+        //then
+
+        List<Member> content = page.getContent(); //반환타입은 List //3개
+
+        for (Member member : content) {
+            System.out.println("member = " + member);
+
+        }
+
+        assertThat(content.size()).isEqualTo(3);
+        //assertThat(page.getTotalElements()).isEqualTo(5); Slice에서는 제공하지 않음
+        assertThat(page.getNumber()).isEqualTo(0); // 페이지 넘버도 가져올 수 있음(현재)
+        //assertThat(page.getTotalPages()).isEqualTo(2);      Slice에서는 제공하지 않음
+    }
+
 }

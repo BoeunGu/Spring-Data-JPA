@@ -1,5 +1,9 @@
 package study.datajpa.repository;
 
+import static org.assertj.core.api.AssertionsForClassTypes.*;
+
+import java.util.List;
+
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -7,12 +11,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.annotation.Rollback;
 import org.springframework.transaction.annotation.Transactional;
+
 import study.datajpa.entity.Member;
-
-import java.util.List;
-
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
 
 
 @SpringBootTest
@@ -74,8 +74,8 @@ class MemberJpaRepositoryTest {
         memberJpaRepository.save(new Member("member1",10));
         memberJpaRepository.save(new Member("member2",20));
         memberJpaRepository.save(new Member("member3",30));
-        memberJpaRepository.save(new Member("member4",40));
-        memberJpaRepository.save(new Member("member5",50));
+        memberJpaRepository.save(new Member("member4", 40));
+        memberJpaRepository.save(new Member("member5", 50));
 
         //when
         int resultcount = memberJpaRepository.bulkAgePlus(20);
@@ -85,5 +85,25 @@ class MemberJpaRepositoryTest {
 
     }
 
+    @Test
+    public void paging() {
+        //given
+        memberJpaRepository.save(new Member("member1", 10));
+        memberJpaRepository.save(new Member("member2", 20));
+        memberJpaRepository.save(new Member("member3", 30));
+        memberJpaRepository.save(new Member("member4", 40));
+        memberJpaRepository.save(new Member("member5", 50));
+
+        int age = 10;
+        int offset = 0;
+        int limit = 3;
+        //when
+        List<Member> members = memberJpaRepository.findByPage(age, offset, limit);
+        long totalCount = memberJpaRepository.totalCount(age);
+
+        //then
+        assertThat(members.size()).isEqualTo(3);
+        assertThat(totalCount).isEqualTo(5);
+    }
 
 }
